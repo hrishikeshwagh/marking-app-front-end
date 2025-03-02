@@ -8,6 +8,7 @@ interface assignment {
     status: string;
     student_it: number;
     title: string;
+    grade: string;
 }
 
 interface Student {
@@ -25,7 +26,7 @@ const StudentList: React.FC = () => {
     const [modalType, setModalType] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('http://192.168.31.125:8000/api/students')
+        fetch('http://127.0.0.1:8000/api/students')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch student data');
@@ -71,7 +72,7 @@ const StudentList: React.FC = () => {
                             <tr key={student.id}>
                                 <td>{student.id}</td>
                                 <td>{student.name}</td>
-                                <td>{student.grade}</td>
+                                <td>{student?.assignments[0]?.grade}</td>
                                 <td>
                                     <button
                                         className="btn btn-info btn-sm"

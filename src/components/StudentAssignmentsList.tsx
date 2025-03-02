@@ -33,7 +33,7 @@ const StudentAssignmentList: React.FC<StudentAssignmentListProps> = ({ studentId
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch(`http://192.168.31.125:8000/api/assignments/student/${studentId}`)
+        fetch(`http://127.0.0.1:8000/api/assignments/student/${studentId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch assignments');
@@ -69,10 +69,10 @@ const StudentAssignmentList: React.FC<StudentAssignmentListProps> = ({ studentId
                                 <thead>
                                     <tr>
                                         <th>Title</th>
-                                        <th>comp_1</th>
-                                        <th>comp_2</th>
-                                        <th>comp_3</th>
-                                        <th>comp_4</th>
+                                        <th>Problem solving skills</th>
+                                        <th>Mathematical Accuracy</th>
+                                        <th>Proof and reasoning</th>
+                                        <th>Presentation</th>
                                         <th>Total Marks</th>
                                         <th>Grade</th>
                                         <th>Status</th>
@@ -86,8 +86,11 @@ const StudentAssignmentList: React.FC<StudentAssignmentListProps> = ({ studentId
                                             <td>{assignment.marks.find(m => m.component_id === 2)?.marks_obtained || '-'}</td>
                                             <td>{assignment.marks.find(m => m.component_id === 3)?.marks_obtained || '-'}</td>
                                             <td>{assignment.marks.find(m => m.component_id === 4)?.marks_obtained || '-'}</td>
-                                            <td>{assignment.total_marks_obtained}</td>
-                                            <td>{assignment.grade}</td>
+                                            <td>
+                                                {assignment.marks
+                                                    .map(m => m.marks_obtained || 0) // Replace missing values with 0
+                                                    .reduce((sum, mark) => sum + mark, 0)} {/* Calculate total directly inside <td> */}
+                                            </td>                                            <td>{assignment.grade}</td>
                                             <td>{assignment.status}</td>
                                         </tr>
                                     ))}

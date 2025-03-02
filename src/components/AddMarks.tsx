@@ -31,9 +31,10 @@ const AddMarks: React.FC<StudentAssignmentListProps> = ({ studentId, studentName
     const [error, setError] = useState<string | null>(null);
     const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
     const [updatedMarks, setUpdatedMarks] = useState<Marks[]>([]);
+    const [validationErrors, setValidationErrors] = useState<{ [key: number]: string }>({});
 
     useEffect(() => {
-        fetch(`http://192.168.31.125:8000/api/assignments/student/${studentId}`)
+        fetch(`http://127.0.0.1:8000/api/assignments/student/${studentId}`)
             .then((response) => {
                 if (!response.ok) throw new Error("Failed to fetch assignments");
                 return response.json();
@@ -48,15 +49,12 @@ const AddMarks: React.FC<StudentAssignmentListProps> = ({ studentId, studentName
             });
     }, [studentId]);
 
-    // Open the popup and initialize marks (either add or edit)
     const openEditModal = (assignment: Assignment) => {
         setSelectedAssignment(assignment);
 
         if (assignment.marks.length > 0) {
-            // If marks exist, allow editing
             setUpdatedMarks([...assignment.marks]);
         } else {
-            // If no marks exist, initialize with empty values
             setUpdatedMarks([
                 { component_id: 1, marks_obtained: 0 },
                 { component_id: 2, marks_obtained: 0 },
@@ -64,23 +62,48 @@ const AddMarks: React.FC<StudentAssignmentListProps> = ({ studentId, studentName
                 { component_id: 4, marks_obtained: 0 },
             ]);
         }
+
+        setValidationErrors({});
     };
 
-    // Handle input change for marks
     const handleMarksChange = (componentId: number, value: number) => {
+        const limits = {
+            1: 40,
+            2: 30,
+            3: 20,
+            4: 10
+        } as const;
+
         setUpdatedMarks((prevMarks) =>
             prevMarks.map((mark) =>
                 mark.component_id === componentId ? { ...mark, marks_obtained: value } : mark
             )
         );
+
+        if (value > limits[componentId as keyof typeof limits]) {
+            setValidationErrors((prevErrors) => ({
+                ...prevErrors,
+                [componentId]: `Marks cannot exceed ${limits[componentId as keyof typeof limits]}`
+            }));
+        } else {
+            setValidationErrors((prevErrors) => {
+                const newErrors = { ...prevErrors };
+                delete newErrors[componentId];
+                return newErrors;
+            });
+        }
     };
 
-    // Save or Add marks to the API
     const saveMarks = async () => {
         if (!selectedAssignment) return;
 
+        if (Object.keys(validationErrors).length > 0) {
+            alert("Please correct the errors before saving.");
+            return;
+        }
+
         try {
-            const response = await fetch("http://192.168.31.125:8000/api/store-marks", {
+            const response = await fetch("http://127.0.0.1:8000/api/store-marks", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -92,7 +115,6 @@ const AddMarks: React.FC<StudentAssignmentListProps> = ({ studentId, studentName
 
             if (!response.ok) throw new Error("Failed to update/add marks");
 
-            // Update UI with the new marks
             setTask((prevTask) => {
                 if (!prevTask) return prevTask;
                 return {
@@ -106,7 +128,7 @@ const AddMarks: React.FC<StudentAssignmentListProps> = ({ studentId, studentName
             });
 
             alert("Marks saved successfully!");
-            setSelectedAssignment(null); // Close modal
+            setSelectedAssignment(null);
         } catch (error) {
             alert("Error saving marks.");
             console.error("Update Error:", error);
@@ -153,7 +175,6 @@ const AddMarks: React.FC<StudentAssignmentListProps> = ({ studentId, studentName
                 Close
             </button>
 
-            {/* Popup Modal for Adding/Editing Marks */}
             {selectedAssignment && (
                 <div className="modal fade show d-block" tabIndex={-1} role="dialog">
                     <div className="modal-dialog" role="document">
@@ -180,11 +201,14 @@ const AddMarks: React.FC<StudentAssignmentListProps> = ({ studentId, studentName
                                                     <input
                                                         type="number"
                                                         className="form-control"
-                                                        value={mark.marks_obtained}
+                                                        placeholder={mark.marks_obtained.toString()}
                                                         onChange={(e) =>
                                                             handleMarksChange(mark.component_id, Number(e.target.value))
                                                         }
                                                     />
+                                                    {validationErrors[mark.component_id] && (
+                                                        <div className="text-danger">{validationErrors[mark.component_id]}</div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
